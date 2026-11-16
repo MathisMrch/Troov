@@ -1,0 +1,20 @@
+# Node / Vite
+node_modules/
+dist/
+*.local
+
+# Variables d'environnement
+.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Éditeurs / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
