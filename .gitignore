@@ -4,7 +4,6 @@ dist/
 *.local
 
 # Variables d'environnement
-.env
 !.env.example
 
 # Python
