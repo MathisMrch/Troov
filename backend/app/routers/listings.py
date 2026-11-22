@@ -1,4 +1,4 @@
-"""GET /listings?limit=  ->  annonces actives les plus récentes"""
+"""Routes pour les catégories et annonces."""
 from fastapi import APIRouter, Query
 
 from app.db.mongo import db
@@ -6,6 +6,19 @@ from app.schemas.listing import ListingOut
 from app.serializers import listings_out
 
 router = APIRouter(prefix="/listings", tags=["listings"])
+
+
+@router.get("/categories")
+def get_categories():
+    categories = db.categories.find().sort("_id", 1)
+    resultat = []
+    for cat in categories:
+        resultat.append({
+            "id": cat["_id"],
+            "name": cat["name"],
+            "slug": cat["slug"],
+        })
+    return resultat
 
 
 @router.get("", response_model=list[ListingOut], response_model_exclude_none=True)
