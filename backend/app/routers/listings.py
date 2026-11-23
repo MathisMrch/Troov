@@ -48,44 +48,14 @@ def _check_owner(doc: dict, user: dict):
 
 
 @router.get("", response_model=list[ListingOut], response_model_exclude_none=True)
-def search_listings(
-    q: str | None = Query(None, min_length=1, max_length=100),
-    category_id: int | None = Query(None, alias="categoryId"),
-    brand_id: int | None = Query(None, alias="brandId"),
-    condition_id: int | None = Query(None, alias="conditionId"),
-    seller_id: str | None = Query(None, alias="sellerId"),
-    city: str | None = None,
-    min_price: float | None = Query(None, alias="minPrice", ge=0),
-    max_price: float | None = Query(None, alias="maxPrice", ge=0),
-    sort: Literal["recent", "price_asc", "price_desc"] = "recent",
+def get_listings(
     limit: int = Query(12, ge=1, le=100),
     skip: int = Query(0, ge=0),
 ):
-    flt: dict = {"status": "active"}
-    if q:
-        flt["title"] = {"$regex": re.escape(q), "$options": "i"}
-    if category_id is not None:
-        flt["categoryId"] = category_id
-    if brand_id is not None:
-        flt["brandId"] = brand_id
-    if condition_id is not None:
-        flt["conditionId"] = condition_id
-    if seller_id:
-        oid = to_oid(seller_id)
-        if oid is None:
-            return []
-        flt["sellerId"] = oid
-    if city:
-        flt["location.city"] = {"$regex": f"^{re.escape(city)}$", "$options": "i"}
-    price = {}
-    if min_price is not None:
-        price["$gte"] = _dec(min_price)
-    if max_price is not None:
-        price["$lte"] = _dec(max_price)
-    if price:
-        flt["price"] = price
-
-    docs = db.listings.find(flt).sort(SORTS[sort]).skip(skip).limit(limit)
+    docs = (db.listings.find({"status": "active"})
+            .sort([("createdAt", -1), ("_id", -1)])
+            .skip(skip)
+            .limit(limit))
     return listings_out(list(docs))
 
 

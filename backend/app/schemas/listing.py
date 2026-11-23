@@ -16,16 +16,16 @@ class ListingOut(BaseModel):
     title: str
     description: str = ""
     price: float
-    category: str = ""               # nom de la catégorie
-    condition: str = ""              # libellé de l'état
+    category: str = ""
+    condition: str = ""
     brand: str = ""
     sellerId: str
     seller: Optional[SellerRef] = None
     city: str = ""
     images: list[str] = []
     createdAt: datetime
-    reason: Optional[str] = None     # recommandations uniquement
-    score: Optional[float] = None    # recommandations uniquement
+    reason: Optional[str] = None
+    score: Optional[float] = None
 
 class LocationIn(BaseModel):
     city: str = ""
