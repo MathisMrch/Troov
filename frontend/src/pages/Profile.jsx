@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar';
 import ListingGrid from '../components/ListingGrid';
 import Spinner from '../components/Spinner';
 import { useAuth } from '../context/AuthContext';
+import { displayName } from '../utils';
 import NotFound from './NotFound';
 
 const TABS = [
@@ -75,7 +76,7 @@ export default function Profile() {
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-slate-900">
-                  {profile.firstName} {profile.lastName}
+                  {displayName(profile, { full: true })}
                 </h1>
                 <p className="text-sm text-slate-500">
                   @{profile.username}

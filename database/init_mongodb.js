@@ -9,7 +9,7 @@
 // =============================================================================
 
 const SEED = true;
-const database = db.getSiblingDB("WebData");
+const database = db.getSiblingDB("vinted_clone"); // même nom que MONGO_DB côté backend
 
 const I = NumberInt;      // entiers 32 bits (ids de categories, brands, conditions)
 const D = NumberDecimal;  // decimal (price)
@@ -56,7 +56,12 @@ ensureCollection("users", {
   properties: {
     username: { bsonType: "string", minLength: 3, maxLength: 30 },
     email: { bsonType: "string", pattern: "^.+@.+\\..+$" },
+    firstName: { bsonType: "string" },
+    lastName: { bsonType: "string" },
+    bio: { bsonType: "string", maxLength: 500 },
     city: { bsonType: "string" },
+    // hash scrypt du mot de passe (géré par le backend, cf. app/security.py)
+    passwordHash: { bsonType: "string" },
     // centres d'intérêt : ids de categories, ex. [1, 4, 9]
     preferences: { bsonType: "array", items: intId },
     createdAt: { bsonType: "date" }
@@ -161,23 +166,23 @@ if (SEED) {
     docs.forEach(d => database[coll].replaceOne({ _id: d._id }, d, { upsert: true }));
 
   upsertAll("categories", [
-    { _id: I(1), name: "Dresses",     slug: "dresses" },
-    { _id: I(2), name: "Shoes",       slug: "shoes" },
-    { _id: I(3), name: "Jackets",     slug: "jackets" },
-    { _id: I(4), name: "Tops",        slug: "tops" },
-    { _id: I(5), name: "Pants",       slug: "pants" },
-    { _id: I(6), name: "Bags",        slug: "bags" },
-    { _id: I(7), name: "Accessories", slug: "accessories" },
-    { _id: I(8), name: "Sportswear",  slug: "sportswear" },
-    { _id: I(9), name: "Jewelry",     slug: "jewelry" }
+    { _id: I(1), name: "Robes",       slug: "robes" },
+    { _id: I(2), name: "Chaussures",  slug: "chaussures" },
+    { _id: I(3), name: "Vestes",      slug: "vestes" },
+    { _id: I(4), name: "Hauts",       slug: "hauts" },
+    { _id: I(5), name: "Pantalons",   slug: "pantalons" },
+    { _id: I(6), name: "Sacs",        slug: "sacs" },
+    { _id: I(7), name: "Accessoires", slug: "accessoires" },
+    { _id: I(8), name: "Sport",       slug: "sport" },
+    { _id: I(9), name: "Bijoux",      slug: "bijoux" }
   ]);
 
   upsertAll("conditions", [
-    { _id: I(1), label: "New with tags",    slug: "new-with-tags" },
-    { _id: I(2), label: "New without tags", slug: "new-without-tags" },
-    { _id: I(3), label: "Very good",        slug: "very-good" },
-    { _id: I(4), label: "Good",             slug: "good" },
-    { _id: I(5), label: "Satisfactory",     slug: "satisfactory" }
+    { _id: I(1), label: "Neuf avec étiquette", slug: "neuf-avec-etiquette" },
+    { _id: I(2), label: "Neuf sans étiquette", slug: "neuf-sans-etiquette" },
+    { _id: I(3), label: "Très bon état",       slug: "tres-bon-etat" },
+    { _id: I(4), label: "Bon état",            slug: "bon-etat" },
+    { _id: I(5), label: "Satisfaisant",        slug: "satisfaisant" }
   ]);
 
   upsertAll("brands", [
@@ -194,12 +199,21 @@ if (SEED) {
     database.counters.updateOne({ _id: name }, { $max: { seq: I(seq) } }, { upsert: true })
   );
 
+  // Mot de passe de test commun : Password123! (hash scrypt, même format que app/security.py)
+  const PWD = "scrypt$16384$8$1$a9d759519bd65b8b761cfb51624583bd$c1b9791d9be6dca72f561e8a42917872076ee2d86bd5571155851b2bc63a7417";
+
   upsertAll("users", [
-    { _id: U1, username: "marie_75", email: "marie_75@example.com", city: "Tours",
+    { _id: U1, username: "marie_75", email: "marie_75@example.com", passwordHash: PWD,
+      firstName: "Marie", lastName: "Martin", city: "Tours",
+      bio: "Je vide mon dressing : robes et chaussures en très bon état.",
       preferences: [I(1), I(2)], createdAt: now },
-    { _id: U2, username: "lucas_37", email: "lucas_37@example.com", city: "Tours",
+    { _id: U2, username: "lucas_37", email: "lucas_37@example.com", passwordHash: PWD,
+      firstName: "Lucas", lastName: "Bernard", city: "Tours",
+      bio: "Fan de denim, je revends ce que je ne porte plus.",
       preferences: [I(3), I(5)], createdAt: now },
-    { _id: U3, username: "sofia_44", email: "sofia_44@example.com", city: "Nantes",
+    { _id: U3, username: "sofia_44", email: "sofia_44@example.com", passwordHash: PWD,
+      firstName: "Sofia", lastName: "Petit", city: "Nantes",
+      bio: "Étudiante à Nantes, toujours à la recherche de belles pièces.",
       preferences: [I(1), I(6)], createdAt: now }
   ]);
 
@@ -215,12 +229,12 @@ if (SEED) {
   });
 
   upsertAll("listings", [
-    listing(L1, U1, "Floral Zara dress size M",        "25.00", 1, 1, 3, "Tours",  "37000", "Worn twice, perfect condition."),
-    listing(L2, U2, "Levi's denim jacket size L",      "40.00", 3, 3, 4, "Tours",  "37000", "Classic fit, some wear on the cuffs."),
-    listing(L3, U3, "Long black Zara dress size S",    "30.00", 1, 1, 2, "Nantes", "44000", "Never worn, tags removed."),
-    listing(L4, U1, "Nike Air Max sneakers size 39",   "55.00", 2, 2, 3, "Tours",  "37000", "Barely used."),
-    listing(L5, U2, "High-waist Levi's jeans size 38", "35.00", 5, 3, 4, "Tours",  "37000", "Straight cut."),
-    listing(L6, U3, "Black leather Mango handbag",     "45.00", 6, 4, 3, "Nantes", "44000", "Zip closure, inner pocket.")
+    listing(L1, U1, "Robe fleurie Zara taille M",       "25.00", 1, 1, 3, "Tours",  "37000", "Portée deux fois, parfait état."),
+    listing(L2, U2, "Veste en jean Levi's taille L",    "40.00", 3, 3, 4, "Tours",  "37000", "Coupe classique, légère usure aux poignets."),
+    listing(L3, U3, "Robe longue noire Zara taille S",  "30.00", 1, 1, 2, "Nantes", "44000", "Jamais portée, étiquette retirée."),
+    listing(L4, U1, "Baskets Nike Air Max pointure 39", "55.00", 2, 2, 3, "Tours",  "37000", "Très peu portées."),
+    listing(L5, U2, "Jean taille haute Levi's T38",     "35.00", 5, 3, 4, "Tours",  "37000", "Coupe droite."),
+    listing(L6, U3, "Sac à main en cuir noir Mango",    "45.00", 6, 4, 3, "Nantes", "44000", "Fermeture zippée, poche intérieure.")
   ]);
 }
 

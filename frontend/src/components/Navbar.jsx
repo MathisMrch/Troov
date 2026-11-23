@@ -1,6 +1,8 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { displayName } from '../utils';
 import Avatar from './Avatar';
+import SearchBar from './SearchBar';
 
 const navLinkClass = ({ isActive }) =>
   `text-sm font-medium transition-colors ${isActive ? 'text-indigo-600' : 'text-slate-600 hover:text-slate-900'}`;
@@ -29,6 +31,8 @@ export default function Navbar() {
           </NavLink>
         </div>
 
+        <SearchBar className="hidden max-w-md flex-1 md:block" />
+
         {user ? (
           <div className="flex items-center gap-3">
             <Link
@@ -37,7 +41,7 @@ export default function Navbar() {
             >
               <Avatar user={user} size="sm" />
               <span className="hidden text-sm font-medium text-slate-700 sm:inline">
-                {user.firstName}
+                {displayName(user)}
               </span>
             </Link>
             <button type="button" onClick={handleLogout} className="btn-secondary">
@@ -55,6 +59,10 @@ export default function Navbar() {
           </div>
         )}
       </nav>
+      {/* Sur mobile, la recherche passe sur une deuxième ligne */}
+      <div className="px-4 pb-3 md:hidden">
+        <SearchBar />
+      </div>
     </header>
   );
 }

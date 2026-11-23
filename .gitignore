@@ -5,6 +5,7 @@ dist/
 
 # Variables d'environnement
 !.env.example
+.env
 
 # Python
 __pycache__/

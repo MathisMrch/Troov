@@ -4,6 +4,7 @@ import { getRecentListings, getRecommendations } from '../api/listings';
 import ListingGrid from '../components/ListingGrid';
 import Spinner from '../components/Spinner';
 import { useAuth } from '../context/AuthContext';
+import { displayName } from '../utils';
 
 function Section({ title, subtitle, children }) {
   return (
@@ -60,7 +61,7 @@ export default function Home() {
     <div className="space-y-12">
       {user ? (
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Bonjour {user.firstName} 👋</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Bonjour {displayName(user)} 👋</h1>
           <p className="text-slate-500">Voici ce qui pourrait vous intéresser aujourd’hui.</p>
         </div>
       ) : (
