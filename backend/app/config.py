@@ -13,7 +13,7 @@ class Settings:
         self.mongo_port = int(env("MONGO_PORT", "27017"))
         self.mongo_user = env("MONGO_USER")
         self.mongo_password = env("MONGO_PASSWORD")
-        self.mongo_db = env("MONGO_DB", "vinted_clone")
+        self.mongo_db = env("MONGO_DB", "WebData") #CHANGER POUR WEBDATA
 
         self.neo4j_uri = env("NEO4J_URI", "bolt://localhost:7687")
         self.neo4j_user = env("NEO4J_USER", "neo4j")

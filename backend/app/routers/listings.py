@@ -1,69 +1,126 @@
-"""
-GET /listings?limit=         ->  annonces actives les plus récentes
-GET /listings/search?q=...   ->  recherche intelligente + filtres (catégorie, prix) + tri
-"""
-from enum import Enum
+"""Annonces :  CRUD + recherche """
+import re
+from typing import Literal
 
 from bson import Decimal128
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 
+from app import graph_sync
 from app.db.mongo import db
-from app.schemas.listing import ListingOut
-from app.search import rank
+from app.schemas.listing import ListingOut, ListingCreate, ListingUpdate
+from app.security import get_current_user
 from app.serializers import listings_out
+from app.utils import best_effort, now, to_oid
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
-SEARCH_POOL = 500  # nombre maximum d'annonces examinées par la recherche
+SORTS = {
+    "recent": [("createdAt", -1), ("_id", -1)],
+    "price_asc": [("price", 1), ("_id", -1)],
+    "price_desc": [("price", -1), ("_id", -1)],
+}
 
 
-class SortBy(str, Enum):
-    relevance = "relevance"
-    price_asc = "price_asc"
-    price_desc = "price_desc"
-    recent = "recent"
+def _dec(value) -> Decimal128:
+    return Decimal128(str(value))
+
+
+def _ensure_refs(category_id=None, brand_id=None, condition_id=None):
+    """Pas de clés étrangères dans Mongo : vérification manuelle."""
+    for coll, value, label in (("categories", category_id, "Catégorie"),
+                               ("brands", brand_id, "Marque"),
+                               ("conditions", condition_id, "État")):
+        if value is not None and db[coll].count_documents({"_id": value}, limit=1) == 0:
+            raise HTTPException(422, f"{label} inconnue")
+
+
+def _get_or_404(listing_id: str) -> dict:
+    oid = to_oid(listing_id)
+    doc = db.listings.find_one({"_id": oid}) if oid else None
+    if not doc or doc["status"] == "deleted":
+        raise HTTPException(404, "Annonce introuvable")
+    return doc
+
+
+def _check_owner(doc: dict, user: dict):
+    if doc["sellerId"] != user["_id"]:
+        raise HTTPException(403, "Vous n'êtes pas le vendeur de cette annonce")
 
 
 @router.get("", response_model=list[ListingOut], response_model_exclude_none=True)
-def get_recent_listings(limit: int = Query(12, ge=1, le=100)):
-    docs = db.listings.find({"status": "active"}).sort([("createdAt", -1), ("_id", -1)]).limit(limit)
+def get_listings(
+    limit: int = Query(12, ge=1, le=100),
+    skip: int = Query(0, ge=0),
+):
+    docs = (db.listings.find({"status": "active"})
+            .sort([("createdAt", -1), ("_id", -1)])
+            .skip(skip)
+            .limit(limit))
     return listings_out(list(docs))
 
 
-@router.get("/search", response_model=list[ListingOut], response_model_exclude_none=True)
-def search_listings(
-    q: str = Query("", max_length=100, description="Mots recherchés (titre, marque, catégorie, état, ville…)"),
-    category: int | None = Query(None, description="Id de catégorie (GET /categories)"),
-    minPrice: float | None = Query(None, ge=0),
-    maxPrice: float | None = Query(None, ge=0),
-    sort: SortBy = SortBy.relevance,
-    limit: int = Query(60, ge=1, le=100),
-):
-    if minPrice is not None and maxPrice is not None and minPrice > maxPrice:
-        raise HTTPException(422, "Le prix minimum doit être inférieur au prix maximum")
+@router.get("/{listing_id}", response_model=ListingOut, response_model_exclude_none=True)
+def get_listing(listing_id: str):
+    return listings_out([_get_or_404(listing_id)])[0]
 
-    # 1. Filtres exacts dans MongoDB (index { categoryId, price })
-    flt: dict = {"status": "active"}
-    if category is not None:
-        flt["categoryId"] = category
-    price = {}
-    if minPrice is not None:
-        price["$gte"] = Decimal128(str(minPrice))
-    if maxPrice is not None:
-        price["$lte"] = Decimal128(str(maxPrice))
-    if price:
-        flt["price"] = price
 
-    docs = list(db.listings.find(flt).sort("createdAt", -1).limit(SEARCH_POOL))
+@router.post("", response_model=ListingOut, response_model_exclude_none=True,
+             status_code=status.HTTP_201_CREATED)
+def create_listing(payload: ListingCreate, user: dict = Depends(get_current_user)):
+    _ensure_refs(payload.categoryId, payload.brandId, payload.conditionId)
+    doc = {
+        "title": payload.title.strip(),
+        "description": payload.description,
+        "price": _dec(payload.price),
+        "categoryId": payload.categoryId,
+        "brandId": payload.brandId,
+        "conditionId": payload.conditionId,
+        "images": payload.images,
+        "location": payload.location.model_dump() if payload.location
+                    else {"city": user.get("city", ""), "postalCode": ""},
+        "sellerId": user["_id"],
+        "status": "active",
+        "createdAt": now(),
+    }
+    doc["_id"] = db.listings.insert_one(doc).inserted_id
+    best_effort(graph_sync.publish_product, str(doc["_id"]), str(user["_id"]),
+                payload.categoryId, payload.brandId)
+    return listings_out([doc])[0]
 
-    # 2. Pertinence textuelle sur les annonces enrichies (marque, catégorie, état en toutes lettres)
-    items = rank(listings_out(docs), q)
 
-    # 3. Tri demandé (la pertinence est déjà appliquée par rank)
-    if sort is SortBy.price_asc:
-        items.sort(key=lambda x: x["price"])
-    elif sort is SortBy.price_desc:
-        items.sort(key=lambda x: x["price"], reverse=True)
-    elif sort is SortBy.recent or not q.strip():
-        items.sort(key=lambda x: x["createdAt"], reverse=True)
-    return items[:limit]
+@router.patch("/{listing_id}", response_model=ListingOut, response_model_exclude_none=True)
+def update_listing(listing_id: str, payload: ListingUpdate, user: dict = Depends(get_current_user)):
+    doc = _get_or_404(listing_id)
+    _check_owner(doc, user)
+
+    changes = payload.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(422, "Aucune modification fournie")
+    if any(v is None for v in changes.values()):
+        raise HTTPException(422, "Valeur null interdite")
+
+    _ensure_refs(changes.get("categoryId"), changes.get("brandId"), changes.get("conditionId"))
+    if "price" in changes:
+        changes["price"] = _dec(changes["price"])
+    if "title" in changes:
+        changes["title"] = changes["title"].strip()
+
+    db.listings.update_one({"_id": doc["_id"]}, {"$set": changes})
+
+    if changes.get("categoryId", doc["categoryId"]) != doc["categoryId"]:
+        best_effort(graph_sync.change_category, listing_id, changes["categoryId"])
+    if changes.get("brandId", doc["brandId"]) != doc["brandId"]:
+        best_effort(graph_sync.change_brand, listing_id, changes["brandId"])
+    if changes.get("status", doc["status"]) != doc["status"]:
+        best_effort(graph_sync.set_status, listing_id, changes["status"])
+
+    return listings_out([db.listings.find_one({"_id": doc["_id"]})])[0]
+
+
+@router.delete("/{listing_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_listing(listing_id: str, user: dict = Depends(get_current_user)):
+    doc = _get_or_404(listing_id)
+    _check_owner(doc, user)
+    db.listings.update_one({"_id": doc["_id"]}, {"$set": {"status": "deleted"}})
+    best_effort(graph_sync.set_status, listing_id, "deleted")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

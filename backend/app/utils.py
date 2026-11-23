@@ -1,6 +1,9 @@
 import logging
 from datetime import datetime, timezone
 
+import re
+import unicodedata
+
 from bson import Decimal128, ObjectId
 from bson.errors import InvalidId
 
@@ -30,3 +33,7 @@ def best_effort(fn, *args, **kwargs):
         fn(*args, **kwargs)
     except Exception:
         log.exception("Projection secondaire échouée : %s", getattr(fn, "__name__", fn))
+
+def slugify(text: str) -> str:
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-") or "item"
