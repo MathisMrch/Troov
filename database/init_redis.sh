@@ -42,12 +42,12 @@ U1=64f0000000000000000000a1   # marie_75
 U2=64f0000000000000000000a2   # lucas_37
 U3=64f0000000000000000000a3   # sofia_44
 
-L1=64f0000000000000000000b1   # Floral Zara dress        (U1, cat 1, brand 1)
-L2=64f0000000000000000000b2   # Levi's denim jacket      (U2, cat 3, brand 3)
-L3=64f0000000000000000000b3   # Long black Zara dress    (U3, cat 1, brand 1)
-L4=64f0000000000000000000b4   # Nike Air Max sneakers    (U1, cat 2, brand 2)
-L5=64f0000000000000000000b5   # High-waist Levi's jeans  (U2, cat 5, brand 3)
-L6=64f0000000000000000000b6   # Black leather handbag    (U3, cat 6, brand 4)
+L1=64f0000000000000000000b1   # Robe fleurie Zara       (U1, cat 1, brand 1)
+L2=64f0000000000000000000b2   # Veste en jean Levi's    (U2, cat 3, brand 3)
+L3=64f0000000000000000000b3   # Robe longue noire Zara  (U3, cat 1, brand 1)
+L4=64f0000000000000000000b4   # Baskets Nike Air Max    (U1, cat 2, brand 2)
+L5=64f0000000000000000000b5   # Jean taille haute Levi's(U2, cat 5, brand 3)
+L6=64f0000000000000000000b6   # Sac en cuir noir Mango  (U3, cat 6, brand 4)
 
 # categories.id
 CAT_DRESSES=1; CAT_SHOES=2; CAT_JACKETS=3; CAT_PANTS=5; CAT_BAGS=6

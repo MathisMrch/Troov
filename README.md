@@ -26,11 +26,12 @@ Projet
 │       │   ├── auth.js       connexion, inscription, session
 │       │   ├── users.js      profils, abonnements (FOLLOWS), favoris (LIKES)
 │       │   ├── listings.js   annonces, recommandations
+│       │   ├── categories.js catégories (lues dans MongoDB)
 │       │   └── mock/         données fictives (sans backend)
 │       ├── components/       composants réutilisables
 │       ├── context/          AuthContext (utilisateur connecté)
 │       ├── pages/            Accueil, Connexion, Inscription, Profil, 404
-│       └── constants.js      catégories
+│       └── utils.js          fonctions d'affichage (nom d'un utilisateur…)
 └── backend/
     ├── Dockerfile
     ├── requirements.txt
@@ -42,7 +43,7 @@ Projet
         ├── security.py       hachage des mots de passe, JWT
         ├── serializers.py    documents MongoDB -> format attendu par le frontend
         ├── utils.py          fonctions utilitaires
-        ├── routers/          routes par domaine : auth, users, listings, recommendations
+        ├── routers/          routes par domaine : auth, users, listings, categories, recommendations
         ├── db/               connexions MongoDB / Neo4j / Redis
         └── schemas/          modèles de validation (requêtes et réponses)
 ```
@@ -60,7 +61,12 @@ npm run dev
 
 Ouvrir http://localhost:5173.
 
-**Compte de test (mode mock)** : `demo@troov.fr` / `demo1234`
+**Comptes de test** (mock et vraie API) : `marie_75@example.com`, `lucas_37@example.com` ou
+`sofia_44@example.com`, mot de passe `Password123!`.
+
+Par défaut, le front appelle l'API (`VITE_USE_MOCK=false`) : lancer d'abord le backend. Pour
+travailler sans Docker, mettre `VITE_USE_MOCK=true` : les données fictives reprennent le même
+jeu de données que les bases (mêmes identifiants, utilisateurs, annonces et catégories).
 
 Les inscriptions et abonnements faits en mode mock sont enregistrés dans le
 `localStorage` du navigateur. Pour revenir aux données de départ, il suffit de vider le
@@ -72,7 +78,7 @@ Dans `frontend/.env` :
 
 | Variable        | Rôle                                                                                   |
 |-----------------|----------------------------------------------------------------------------------------|
-| `VITE_USE_MOCK` | `false` : appelle l'API FastAPI ; toute autre valeur, ou absente : données fictives    |
+| `VITE_USE_MOCK` | `false` (défaut du `.env.example`) : appelle l'API FastAPI ; toute autre valeur, ou absente : données fictives |
 | `VITE_API_URL`  | URL de l'API (par défaut `http://localhost:8000`)                                      |
 
 ## Lancer le backend
@@ -99,19 +105,19 @@ docker exec neo4j cypher-shell -u neo4j -p neo4j_pwd -f /tmp/init_neo4j.cypher
 docker run --rm --network troov_default --env-file .env -e REDIS_HOST=redis -v "${PWD}:/init" redis:7 bash -c "tr -d '\r' < /init/database/init_redis.sh | bash"
 ```
 
-**3. Donner un mot de passe aux utilisateurs de test**
+**3. Comptes de test**
 
-```bash
-docker compose exec api python -m scripts.seed_passwords
-```
-
-Connexion possible avec `marie_75@example.com`, `lucas_37@example.com` ou
-`sofia_44@example.com`, mot de passe `Password123!`.
+`init_mongodb.js` enregistre déjà le hash du mot de passe `Password123!` pour
+`marie_75@example.com`, `lucas_37@example.com` et `sofia_44@example.com`.
+Pour le régénérer (facultatif) : `docker compose exec api python -m scripts.seed_passwords`.
 
 **4. Vérifier**
 
 `http://localhost:8000/health` doit répondre `{"mongo":"ok","neo4j":"ok","redis":"ok"}`.
-Dans `frontend/.env`, mettre `VITE_USE_MOCK=false` pour utiliser l'API.
+Le front (`VITE_USE_MOCK=false`) utilise alors directement l'API.
+
+> Après une modification de `database/`, relancer les scripts de l'étape 2 : ils sont idempotents
+> (MongoDB et Neo4j mettent à jour les documents et les nœuds existants).
 
 ### Interfaces de développement
 
@@ -157,7 +163,7 @@ intérêts par catégorie ; le reste est initialisé par `init_redis.sh` pour le
    Une base indisponible renvoie une erreur 503.
 
 Pas encore couvert par le backend : publication, modification et suppression d'annonces,
-recherche par filtres, liste des catégories, ajout et retrait de favoris.
+recherche par filtres, ajout et retrait de favoris.
 
 ## Contrat d'API attendu par le frontend
 
@@ -175,6 +181,7 @@ L'authentification passe par un token JWT envoyé dans l'en-tête
 | POST    | `/users/{id}/follow`          | 204                                       | Neo4j (FOLLOWS)         |
 | DELETE  | `/users/{id}/follow`          | 204                                       | Neo4j (FOLLOWS)         |
 | GET     | `/listings?limit=`            | `listing[]` (avec `seller`)               | MongoDB                 |
+| GET     | `/categories`                 | `[{ id, name, slug }]`                    | MongoDB                 |
 | GET     | `/recommendations?limit=`     | `listing[]` (avec `seller`, `reason` et `score`) | Neo4j + Redis → MongoDB |
 
 La forme des objets `user` et `listing` suit
@@ -189,6 +196,6 @@ valent une chaîne vide quand ils ne sont pas renseignés.
 |----------|---------------------------|----------------------------------------------------|---------------------------------------------------|
 | Alex     | Profils et vendeurs       | `api/users.js`, `pages/Profile.jsx`                | `routers/users.py`, `serializers.py`              |
 | Mathis   | Publication des annonces  | `api/listings.js`, page de publication (à créer)   | `routers/listings.py`                             |
-| Bastien  | Recherche et catégories   | page de recherche (à créer), `constants.js`        | `routers/listings.py`                             |
+| Bastien  | Recherche et catégories   | page de recherche (à créer), `api/categories.js`   | `routers/listings.py`, `routers/categories.py`    |
 | Douae    | Favoris et préférences    | `api/users.js` (favoris), interface favoris        | `routers/users.py`                                |
 | Yoan     | Recommandations           | `api/listings.js` (`getRecommendations`), `pages/Home.jsx` | `routers/recommendations.py`              |

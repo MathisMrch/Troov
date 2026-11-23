@@ -79,11 +79,11 @@ export default function Login() {
         </button>
       </form>
 
-      {USE_MOCK && (
-        <div className="mt-6 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
-          <strong>Mode démo</strong> — compte de test : demo@troov.fr / demo1234
-        </div>
-      )}
+      {/* Comptes du jeu de données (database/init_mongodb.js), identiques en mock et avec l'API */}
+      <div className="mt-6 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
+        <strong>{USE_MOCK ? 'Mode démo' : 'Comptes de test'}</strong> — marie_75@example.com,
+        lucas_37@example.com ou sofia_44@example.com / Password123!
+      </div>
     </AuthCard>
   );
 }

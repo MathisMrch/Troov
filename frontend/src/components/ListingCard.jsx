@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
 
 const CATEGORY_STYLES = {
-  Informatique: 'from-sky-100 to-indigo-100 text-indigo-700',
-  Maison: 'from-amber-50 to-orange-100 text-orange-700',
+  // Clés = categories.name dans MongoDB
+  Robes: 'from-pink-50 to-rose-100 text-rose-700',
+  Chaussures: 'from-sky-100 to-indigo-100 text-indigo-700',
+  Vestes: 'from-stone-100 to-yellow-100 text-yellow-800',
+  Hauts: 'from-amber-50 to-orange-100 text-orange-700',
+  Pantalons: 'from-blue-50 to-blue-100 text-blue-700',
+  Sacs: 'from-violet-50 to-purple-100 text-purple-700',
+  Accessoires: 'from-teal-50 to-cyan-100 text-cyan-700',
   Sport: 'from-emerald-50 to-green-100 text-green-700',
-  Mode: 'from-pink-50 to-rose-100 text-rose-700',
-  Livres: 'from-stone-100 to-yellow-100 text-yellow-800',
-  Musique: 'from-violet-50 to-purple-100 text-purple-700',
+  Bijoux: 'from-fuchsia-50 to-fuchsia-100 text-fuchsia-700',
 };
 
 const formatPrice = (price) =>
@@ -36,7 +40,7 @@ export default function ListingCard({ listing }) {
         )}
 
         <div className="mt-auto flex items-center justify-between pt-2 text-xs text-slate-500">
-          <span>{listing.condition}{listing.city && ` · ${listing.city}`}</span>
+          <span>{[listing.brand, listing.condition, listing.city].filter(Boolean).join(' · ')}</span>
           {listing.seller && (
             <Link to={`/profil/${listing.seller._id}`} className="font-medium hover:text-indigo-600">
               @{listing.seller.username}

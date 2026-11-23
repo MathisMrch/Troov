@@ -2,6 +2,7 @@
 
 import { USE_MOCK, mockDelay, request, tokenStorage } from './client';
 import { db, userIdFromToken } from './mock/db';
+import { rank } from './mock/search';
 
 const withSeller = (listing) => {
   const seller = db.users.find((u) => u._id === listing.sellerId);
@@ -49,4 +50,30 @@ export async function getRecommendations(limit = 4) {
       .slice(0, limit);
   }
   return request(`/recommendations?limit=${limit}`);
+}
+
+// GET /listings/search?q=&category=&minPrice=&maxPrice=&sort=
+// Recherche intelligente (titre, marque, catégorie, état, ville, description) + filtres + tri.
+// sort : relevance (défaut) | price_asc | price_desc | recent
+export async function searchListings({ q = '', category, minPrice, maxPrice, sort = 'relevance' } = {}) {
+  if (USE_MOCK) {
+    await mockDelay(200);
+    const categoryName = db.categories.find((c) => String(c.id) === String(category))?.name;
+    const filtered = db.listings.filter(
+      (l) =>
+        (!category || l.category === categoryName) &&
+        (minPrice === undefined || minPrice === '' || l.price >= Number(minPrice)) &&
+        (maxPrice === undefined || maxPrice === '' || l.price <= Number(maxPrice)),
+    );
+    const items = rank(filtered.map(withSeller), q);
+    if (sort === 'price_asc') items.sort((a, b) => a.price - b.price);
+    else if (sort === 'price_desc') items.sort((a, b) => b.price - a.price);
+    else if (sort === 'recent' || !q.trim()) items.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return items.slice(0, 60);
+  }
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries({ q, category, minPrice, maxPrice, sort })) {
+    if (value !== undefined && value !== null && value !== '') params.set(key, value);
+  }
+  return request(`/listings/search?${params}`);
 }

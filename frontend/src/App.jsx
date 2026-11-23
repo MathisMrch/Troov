@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
+import Search from './pages/Search';
 import NotFound from './pages/NotFound';
 
 function MyProfileRedirect() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route index element={<Home />} />
         <Route path="connexion" element={<Login />} />
         <Route path="inscription" element={<Register />} />
+        <Route path="recherche" element={<Search />} />
         <Route element={<ProtectedRoute />}>
           <Route path="profil" element={<MyProfileRedirect />} />
           <Route path="profil/:id" element={<Profile />} />

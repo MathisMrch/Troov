@@ -1,127 +1,111 @@
-// Données fictives initiales.
-// La forme des objets suit ce que l'API renverra :
-//  - users / listings  -> collections MongoDB
-//  - follows / likes   -> relations Neo4j (FOLLOWS, LIKES)
+// Données fictives initiales, alignées sur le jeu de données des bases
+// (database/init_mongodb.js, init_neo4j.cypher) : mêmes identifiants, mêmes contenus.
+// La forme des objets suit ce que l'API renvoie :
+//  - users / listings / categories -> collections MongoDB (via les serializers du backend)
+//  - follows / likes               -> relations Neo4j (FOLLOWS, LIKES)
+
+const U1 = '64f0000000000000000000a1'; // marie_75
+const U2 = '64f0000000000000000000a2'; // lucas_37
+const U3 = '64f0000000000000000000a3'; // sofia_44
+
+const L1 = '64f0000000000000000000b1';
+const L2 = '64f0000000000000000000b2';
+const L3 = '64f0000000000000000000b3';
+const L4 = '64f0000000000000000000b4';
+const L5 = '64f0000000000000000000b5';
+const L6 = '64f0000000000000000000b6';
+
+const CREATED_AT = '2026-11-19T09:00:00Z';
+
+const listing = (_id, sellerId, title, price, category, brand, condition, city, description) => ({
+  _id,
+  title,
+  description,
+  price,
+  category,
+  condition,
+  brand,
+  sellerId,
+  city,
+  images: [],
+  createdAt: CREATED_AT,
+});
 
 export const seed = {
+  categories: [
+    { id: 1, name: 'Robes', slug: 'robes' },
+    { id: 2, name: 'Chaussures', slug: 'chaussures' },
+    { id: 3, name: 'Vestes', slug: 'vestes' },
+    { id: 4, name: 'Hauts', slug: 'hauts' },
+    { id: 5, name: 'Pantalons', slug: 'pantalons' },
+    { id: 6, name: 'Sacs', slug: 'sacs' },
+    { id: 7, name: 'Accessoires', slug: 'accessoires' },
+    { id: 8, name: 'Sport', slug: 'sport' },
+    { id: 9, name: 'Bijoux', slug: 'bijoux' },
+  ],
+
   users: [
     {
-      _id: 'u1',
-      username: 'sarah',
-      email: 'demo@troov.fr',
-      password: 'demo1234', // uniquement en mock : le backend stockera un hash
-      firstName: 'Sarah',
-      lastName: 'Lefèvre',
-      bio: 'Étudiante à Tours, passionnée de tech et de musique.',
+      _id: U1,
+      username: 'marie_75',
+      email: 'marie_75@example.com',
+      password: 'Password123!', // uniquement en mock : le backend stocke un hash scrypt
+      firstName: 'Marie',
+      lastName: 'Martin',
+      bio: 'Je vide mon dressing : robes et chaussures en très bon état.',
       city: 'Tours',
-      interests: ['Informatique', 'Musique'],
-      createdAt: '2026-09-02T10:00:00Z',
+      interests: ['Robes', 'Chaussures'],
+      createdAt: CREATED_AT,
     },
     {
-      _id: 'u2',
-      username: 'adam',
-      email: 'adam@troov.fr',
-      password: 'adam1234',
-      firstName: 'Adam',
+      _id: U2,
+      username: 'lucas_37',
+      email: 'lucas_37@example.com',
+      password: 'Password123!',
+      firstName: 'Lucas',
       lastName: 'Bernard',
-      bio: 'Je revends le matériel informatique que je n’utilise plus.',
-      city: 'Orléans',
-      interests: ['Informatique', 'Sport'],
-      createdAt: '2026-08-15T09:30:00Z',
+      bio: 'Fan de denim, je revends ce que je ne porte plus.',
+      city: 'Tours',
+      interests: ['Vestes', 'Pantalons'],
+      createdAt: CREATED_AT,
     },
     {
-      _id: 'u3',
-      username: 'lea',
-      email: 'lea@troov.fr',
-      password: 'lea12345',
-      firstName: 'Léa',
-      lastName: 'Dubois',
-      bio: 'Musicienne et cycliste du dimanche.',
-      city: 'Tours',
-      interests: ['Musique', 'Sport', 'Livres'],
-      createdAt: '2026-07-20T14:00:00Z',
+      _id: U3,
+      username: 'sofia_44',
+      email: 'sofia_44@example.com',
+      password: 'Password123!',
+      firstName: 'Sofia',
+      lastName: 'Petit',
+      bio: 'Étudiante à Nantes, toujours à la recherche de belles pièces.',
+      city: 'Nantes',
+      interests: ['Robes', 'Sacs'],
+      createdAt: CREATED_AT,
     },
   ],
 
   listings: [
-    {
-      _id: 'l1',
-      title: 'Clavier mécanique RGB',
-      description: 'Switches rouges, très bon état, câble USB-C fourni.',
-      price: 79,
-      category: 'Informatique',
-      condition: 'Très bon état',
-      sellerId: 'u2',
-      city: 'Orléans',
-      createdAt: '2026-11-14T18:20:00Z',
-    },
-    {
-      _id: 'l2',
-      title: 'Écran 27" QHD',
-      description: 'Écran 144 Hz, aucun pixel mort, pied réglable.',
-      price: 180,
-      category: 'Informatique',
-      condition: 'Bon état',
-      sellerId: 'u2',
-      city: 'Orléans',
-      createdAt: '2026-11-12T11:00:00Z',
-    },
-    {
-      _id: 'l3',
-      title: 'Guitare acoustique',
-      description: 'Guitare folk avec housse et accordeur.',
-      price: 150,
-      category: 'Musique',
-      condition: 'Bon état',
-      sellerId: 'u3',
-      city: 'Tours',
-      createdAt: '2026-11-10T16:45:00Z',
-    },
-    {
-      _id: 'l4',
-      title: 'Vélo de ville',
-      description: 'Taille M, 7 vitesses, révisé récemment.',
-      price: 220,
-      category: 'Sport',
-      condition: 'Très bon état',
-      sellerId: 'u3',
-      city: 'Tours',
-      createdAt: '2026-11-08T09:10:00Z',
-    },
-    {
-      _id: 'l5',
-      title: 'Lampe de bureau LED',
-      description: 'Trois niveaux de luminosité, bras articulé.',
-      price: 25,
-      category: 'Maison',
-      condition: 'Neuf',
-      sellerId: 'u1',
-      city: 'Tours',
-      createdAt: '2026-11-05T13:30:00Z',
-    },
-    {
-      _id: 'l6',
-      title: 'Casque audio sans fil',
-      description: 'Réduction de bruit active, 30 h d’autonomie.',
-      price: 95,
-      category: 'Musique',
-      condition: 'Bon état',
-      sellerId: 'u2',
-      city: 'Orléans',
-      createdAt: '2026-11-03T20:00:00Z',
-    },
+    listing(L1, U1, 'Robe fleurie Zara taille M', 25, 'Robes', 'Zara', 'Très bon état', 'Tours', 'Portée deux fois, parfait état.'),
+    listing(L2, U2, "Veste en jean Levi's taille L", 40, 'Vestes', "Levi's", 'Bon état', 'Tours', 'Coupe classique, légère usure aux poignets.'),
+    listing(L3, U3, 'Robe longue noire Zara taille S', 30, 'Robes', 'Zara', 'Neuf sans étiquette', 'Nantes', 'Jamais portée, étiquette retirée.'),
+    listing(L4, U1, 'Baskets Nike Air Max pointure 39', 55, 'Chaussures', 'Nike', 'Très bon état', 'Tours', 'Très peu portées.'),
+    listing(L5, U2, "Jean taille haute Levi's T38", 35, 'Pantalons', "Levi's", 'Bon état', 'Tours', 'Coupe droite.'),
+    listing(L6, U3, 'Sac à main en cuir noir Mango', 45, 'Sacs', 'Mango', 'Très bon état', 'Nantes', 'Fermeture zippée, poche intérieure.'),
   ],
 
   // (follower)-[:FOLLOWS]->(following)
   follows: [
-    { follower: 'u1', following: 'u2' },
-    { follower: 'u3', following: 'u1' },
-    { follower: 'u2', following: 'u3' },
+    { follower: U1, following: U2 },
+    { follower: U2, following: U3 },
+    { follower: U3, following: U1 },
+    { follower: U3, following: U2 },
   ],
 
   // (user)-[:LIKES]->(listing)
   likes: [
-    { userId: 'u1', listingId: 'l3' },
-    { userId: 'u3', listingId: 'l1' },
+    { userId: U1, listingId: L3 },
+    { userId: U2, listingId: L1 },
+    { userId: U2, listingId: L4 },
+    { userId: U3, listingId: L1 },
+    { userId: U3, listingId: L2 },
   ],
 };

@@ -6,7 +6,9 @@ const SIZES = {
 
 // Avatar à initiales (en attendant l'upload de photos de profil)
 export default function Avatar({ user, size = 'md' }) {
-  const initials = `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}`.toUpperCase();
+  const initials = (
+    `${user.firstName?.[0] ?? ''}${user.lastName?.[0] ?? ''}` || user.username?.[0] || ''
+  ).toUpperCase();
   return (
     <span
       className={`inline-flex shrink-0 items-center justify-center rounded-full bg-indigo-100 font-semibold text-indigo-700 ${SIZES[size]}`}

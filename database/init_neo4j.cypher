@@ -60,18 +60,18 @@ MERGE (u:User {id: row.id})
 // 3. Données de test : catégories et marques (ids identiques à MongoDB)
 // -----------------------------------------------------------------------------
 UNWIND [
-  {id: 1, name: 'Dresses',     slug: 'dresses'},
-  {id: 2, name: 'Shoes',       slug: 'shoes'},
-  {id: 3, name: 'Jackets',     slug: 'jackets'},
-  {id: 4, name: 'Tops',        slug: 'tops'},
-  {id: 5, name: 'Pants',       slug: 'pants'},
-  {id: 6, name: 'Bags',        slug: 'bags'},
-  {id: 7, name: 'Accessories', slug: 'accessories'},
-  {id: 8, name: 'Sportswear',  slug: 'sportswear'},
-  {id: 9, name: 'Jewelry',     slug: 'jewelry'}
+  {id: 1, name: 'Robes',       slug: 'robes'},
+  {id: 2, name: 'Chaussures',  slug: 'chaussures'},
+  {id: 3, name: 'Vestes',      slug: 'vestes'},
+  {id: 4, name: 'Hauts',       slug: 'hauts'},
+  {id: 5, name: 'Pantalons',   slug: 'pantalons'},
+  {id: 6, name: 'Sacs',        slug: 'sacs'},
+  {id: 7, name: 'Accessoires', slug: 'accessoires'},
+  {id: 8, name: 'Sport',       slug: 'sport'},
+  {id: 9, name: 'Bijoux',      slug: 'bijoux'}
 ] AS row
 MERGE (c:Category {id: row.id})
-  ON CREATE SET c.name = row.name, c.slug = row.slug;
+  SET c.name = row.name, c.slug = row.slug;
 
 UNWIND [
   {id: 1, name: 'Zara'},

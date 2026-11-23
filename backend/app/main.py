@@ -11,7 +11,7 @@ from app.config import settings
 from app.db import neo4j_db
 from app.db.mongo import client as mongo_client
 from app.db.redis_db import r
-from app.routers import auth, listings, recommendations, users
+from app.routers import auth, categories, listings, recommendations, users
 
 app = FastAPI(title="API Troov")
 
@@ -41,5 +41,5 @@ def health():
     return {"mongo": "ok", "neo4j": "ok", "redis": "ok"}
 
 
-for module in (auth, users, listings, recommendations):
+for module in (auth, users, listings, categories, recommendations):
     app.include_router(module.router)

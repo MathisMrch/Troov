@@ -3,7 +3,8 @@
 
 import { seed } from './data';
 
-const STORAGE_KEY = 'sm_mock_db';
+// Clé versionnée : changer la version quand data.js change, pour ignorer les anciennes données
+const STORAGE_KEY = 'sm_mock_db_v2';
 
 function load() {
   try {

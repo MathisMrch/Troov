@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { CATEGORIES } from '../constants';
+import { getCategories } from '../api/categories';
 import { useAuth } from '../context/AuthContext';
 import AuthCard, { FormError } from '../components/AuthCard';
 
@@ -29,6 +29,12 @@ export default function Register() {
   const [form, setForm] = useState(INITIAL_FORM);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  // Catégories lues dans MongoDB (GET /categories)
+  useEffect(() => {
+    getCategories().then(setCategories).catch(() => setCategories([]));
+  }, []);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -109,11 +115,11 @@ export default function Register() {
           </div>
         </div>
 
-        {/* Centres d'intérêt -> relations INTERESTED_IN dans Neo4j */}
+        {/* Centres d'intérêt -> users.preferences (MongoDB) et user:{id}:interest:category (Redis) */}
         <fieldset>
           <legend className="label">Centres d’intérêt <span className="font-normal text-slate-400">(facultatif)</span></legend>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((category) => {
+            {categories.map(({ name: category }) => {
               const selected = form.interests.includes(category);
               return (
                 <button
